@@ -1,0 +1,32 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg17
+    container_name: timescaledb
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_secure_password_here}
+      POSTGRES_DB: ${DB_NAME:-trading_db}
+      POSTGRES_USER: postgres
+      TIMESCALEDB_TELEMETRY: "off"
+    volumes:
+      - ${TSDB_DATA_PATH:-./data}:/var/lib/postgresql/data
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./config/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c hba_file=/etc/postgresql/pg_hba.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - timescaledb-network
+
+networks:
+  timescaledb-network:
+    driver: bridge
