@@ -102,8 +102,8 @@ All setup steps are automated with numbered scripts in the `scripts/` directory:
 - **Port**: 5432 (PostgreSQL standard)
 
 ### Database Schema
-- **Main Database**: `trading_db`
-- **Default User**: `trading_user`
+- **Main Database**: `myapp_db`
+- **Default User**: `app_user`
 - **Admin User**: `postgres`
 - **Schema**: `public` with full permissions
 - **Extensions**: TimescaleDB, pgcrypto, uuid-ossp
@@ -141,20 +141,14 @@ All setup steps are automated with numbered scripts in the `scripts/` directory:
 The setup includes comprehensive environment management:
 
 ```bash
-# Database Connection
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=trading_db
-DB_USER=trading_user
+# Database and network configuration
+DB_NAME=myapp_db
+DB_USER=app_user
 DB_PASSWORD=your_secure_password
 
-# Full connection string
-DATABASE_URL=postgresql://trading_user:password@localhost:5432/trading_db
-
-# Network Configuration
-STATIC_IP=10.0.10.30
-GATEWAY=10.0.10.1
-DNS_SERVERS="8.8.8.8 8.8.4.4"
+# Network settings  
+STATIC_IP=192.168.1.100
+GATEWAY=192.168.1.1
 ```
 
 ## 🧪 Testing and Verification
@@ -169,14 +163,14 @@ DNS_SERVERS="8.8.8.8 8.8.4.4"
 ### Manual Verification
 ```bash
 # Test database connection
-psql -U trading_user -d trading_db -h localhost
+psql -U app_user -d myapp_db -h localhost
 
 # Check TimescaleDB extension
 SELECT extname, extversion FROM pg_extension WHERE extname = 'timescaledb';
 
 # Verify data persistence
 docker restart timescaledb
-psql -U trading_user -d trading_db -c "SELECT COUNT(*) FROM your_table;"
+psql -U app_user -d myapp_db -c "SELECT COUNT(*) FROM your_table;"
 ```
 
 ## 📦 What's Included
@@ -233,7 +227,7 @@ netstat -tlnp | grep 5432
 ./scripts/05-create-users.sh
 
 # Check user permissions
-psql -U postgres -d trading_db -c "SELECT grantee, table_name, privilege_type FROM information_schema.role_table_grants WHERE grantee = 'trading_user';"
+psql -U postgres -d myapp_db -c "SELECT grantee, table_name, privilege_type FROM information_schema.role_table_grants WHERE grantee = 'app_user';"
 ```
 
 **Data Not Persisting**

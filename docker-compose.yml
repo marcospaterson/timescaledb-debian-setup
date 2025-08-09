@@ -7,7 +7,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_secure_password_here}
-      POSTGRES_DB: ${DB_NAME:-trading_db}
+      POSTGRES_DB: ${DB_NAME:-myapp_db}
       POSTGRES_USER: postgres
       TIMESCALEDB_TELEMETRY: "off"
     volumes:

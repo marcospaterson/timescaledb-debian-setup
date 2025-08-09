@@ -25,8 +25,8 @@ Before running the setup, configure your environment variables in `.env`:
 
 ```bash
 # Network Configuration
-STATIC_IP=10.0.10.30
-GATEWAY=10.0.10.1
+STATIC_IP=192.168.1.100
+GATEWAY=192.168.1.1
 DNS_SERVERS="8.8.8.8 8.8.4.4"
 NETMASK=255.255.255.0
 INTERFACE=eth0
@@ -68,9 +68,9 @@ Creates static IP configuration in `/etc/network/interfaces`:
 ```
 auto eth0
 iface eth0 inet static
-    address 10.0.10.30
+    address 192.168.1.100
     netmask 255.255.255.0
-    gateway 10.0.10.1
+    gateway 192.168.1.1
     dns-nameservers 8.8.8.8 8.8.4.4
 ```
 

@@ -283,7 +283,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-trading_db}
+      POSTGRES_DB: ${DB_NAME:-myapp_db}
       TIMESCALEDB_TELEMETRY: "off"
     volumes:
       - ${TSDB_DATA_PATH}/postgresql:/var/lib/postgresql/data
@@ -368,7 +368,7 @@ The user management script implements security best practices:
 
 ```bash
 # Generate secure password if not provided
-if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "your_trading_user_password" ]; then
+if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "your_app_user_password" ]; then
     DB_PASSWORD=$(openssl rand -hex 16)
     # Update .env file automatically
     sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
@@ -862,15 +862,15 @@ docker rm timescaledb
 **Data Corruption Recovery:**
 ```bash
 # Check database integrity
-docker exec timescaledb psql -U postgres -d trading_db -c "
+docker exec timescaledb psql -U postgres -d myapp_db -c "
 SELECT datname, pg_database_size(datname) as size
 FROM pg_database
 WHERE datallowconn = true;
 "
 
 # Run consistency checks
-docker exec timescaledb psql -U postgres -d trading_db -c "
-REINDEX DATABASE trading_db;
+docker exec timescaledb psql -U postgres -d myapp_db -c "
+REINDEX DATABASE myapp_db;
 VACUUM ANALYZE;
 "
 ```
@@ -895,7 +895,7 @@ echo "ssl = on" >> /opt/timescaledb/config/postgresql.conf
 echo "host all all 0.0.0.0/0 cert" >> /opt/timescaledb/config/pg_hba.conf
 
 # Implement connection limits
-echo "ALTER USER trading_user CONNECTION LIMIT 10;" | docker exec -i timescaledb psql -U postgres
+echo "ALTER USER app_user CONNECTION LIMIT 10;" | docker exec -i timescaledb psql -U postgres
 ```
 
 ### High Availability Setup
@@ -1060,7 +1060,7 @@ from datetime import datetime
 
 async def insert_metrics():
     conn = await asyncpg.connect(
-        "postgresql://trading_user:password@localhost:5432/trading_db"
+        "postgresql://app_user:password@localhost:5432/myapp_db"
     )
     
     await conn.execute("""
@@ -1076,7 +1076,7 @@ async def insert_metrics():
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: 'postgresql://trading_user:password@localhost:5432/trading_db'
+  connectionString: 'postgresql://app_user:password@localhost:5432/myapp_db'
 });
 
 async function insertMetrics() {

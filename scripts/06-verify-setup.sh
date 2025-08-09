@@ -69,8 +69,8 @@ if [ -f "$REPO_ROOT/.env" ]; then
     source "$REPO_ROOT/.env"
 else
     warning ".env file not found, using defaults"
-    DB_NAME="trading_db"
-    DB_USER="trading_user"
+    DB_NAME="myapp_db"
+    DB_USER="app_user"
 fi
 
 info "Starting comprehensive TimescaleDB verification..."

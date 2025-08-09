@@ -62,7 +62,7 @@ fi
 
 # Set default values if not provided
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-"your_secure_password_here"}
-DB_NAME=${DB_NAME:-"trading_db"}
+DB_NAME=${DB_NAME:-"myapp_db"}
 TSDB_DATA_PATH=${TSDB_DATA_PATH:-"/mnt/timescaledb-data"}
 
 # Check if running as root or with sudo

@@ -53,9 +53,9 @@ else
     error ".env file not found. Please create it from .env.example"
 fi
 
-# Set default values
-DB_NAME=${DB_NAME:-"trading_db"}
-DB_USER=${DB_USER:-"trading_user"}
+# Set defaults
+DB_NAME=${DB_NAME:-"myapp_db"}
+DB_USER=${DB_USER:-"app_user"}
 DB_PASSWORD=${DB_PASSWORD:-""}
 
 info "Starting database user creation process..."
@@ -73,7 +73,7 @@ if ! docker exec timescaledb pg_isready -U postgres > /dev/null 2>&1; then
 fi
 
 # Generate secure password if not provided
-if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "your_trading_user_password" ]; then
+if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "your_app_user_password" ]; then
     info "Generating secure password for $DB_USER..."
     DB_PASSWORD=$(openssl rand -hex 16)
     warning "Generated password: $DB_PASSWORD"
@@ -197,7 +197,7 @@ cat > /opt/timescaledb/scripts/manage-users.sh << 'EOF'
 #!/bin/bash
 # User management utility script
 
-DB_NAME="trading_db"
+DB_NAME="myapp_db"
 CONTAINER_NAME="timescaledb"
 
 usage() {

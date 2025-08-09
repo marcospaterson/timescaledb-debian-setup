@@ -51,8 +51,8 @@ if [ -f "$REPO_ROOT/.env" ]; then
     info "Loaded environment variables from .env file"
 else
     warning ".env file not found, using default values"
-    STATIC_IP=${STATIC_IP:-"10.0.10.30"}
-    GATEWAY=${GATEWAY:-"10.0.10.1"}
+    STATIC_IP=${STATIC_IP:-"192.168.1.100"}
+    GATEWAY=${GATEWAY:-"192.168.1.1"}
     DNS_SERVERS=${DNS_SERVERS:-"8.8.8.8 8.8.4.4"}
     NETMASK=${NETMASK:-"255.255.255.0"}
     INTERFACE=${INTERFACE:-"eth0"}

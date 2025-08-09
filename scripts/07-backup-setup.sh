@@ -53,7 +53,7 @@ else
 fi
 
 # Set default values
-DB_NAME=${DB_NAME:-"trading_db"}
+DB_NAME=${DB_NAME:-"myapp_db"}
 DB_USER=${DB_USER:-"postgres"}
 TSDB_DATA_PATH=${TSDB_DATA_PATH:-"/mnt/timescaledb-data"}
 BACKUP_PATH=${BACKUP_PATH:-"$TSDB_DATA_PATH/backups"}
@@ -89,8 +89,8 @@ cat > /opt/timescaledb/backup.conf << EOF
 # Generated: $(date)
 
 # Database settings
-CONTAINER_NAME="timescaledb"
-DB_NAME="$DB_NAME"
+CONTAINER_NAME=${CONTAINER_NAME:-"timescaledb"}
+DB_NAME=${DB_NAME:-"myapp_db"}
 DB_USER="postgres"
 
 # Backup settings
