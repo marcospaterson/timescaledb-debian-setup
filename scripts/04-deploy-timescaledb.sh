@@ -41,14 +41,18 @@ info() {
     log "${BLUE}INFO: $1${NC}"
 }
 
+# Get script directory and repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Load environment variables
-if [ -f ".env" ]; then
-    source .env
+if [ -f "$REPO_ROOT/.env" ]; then
+    source "$REPO_ROOT/.env"
     info "Loaded environment variables from .env file"
 else
     warning ".env file not found, creating from template"
-    if [ -f ".env.example" ]; then
-        cp .env.example .env
+    if [ -f "$REPO_ROOT/.env.example" ]; then
+        cp "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
         warning "Please edit .env file with your specific configuration"
         warning "Default passwords should be changed for security"
     else
@@ -113,6 +117,7 @@ info "Docker Compose override configuration created"
 
 # Pull the latest TimescaleDB image
 info "Pulling TimescaleDB Docker image..."
+cd "$REPO_ROOT"
 docker compose pull >> "$LOGFILE" 2>&1
 success "TimescaleDB image pulled"
 

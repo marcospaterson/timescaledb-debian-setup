@@ -60,9 +60,13 @@ run_test() {
     fi
 }
 
+# Get script directory and repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Load environment variables
-if [ -f ".env" ]; then
-    source .env
+if [ -f "$REPO_ROOT/.env" ]; then
+    source "$REPO_ROOT/.env"
 else
     warning ".env file not found, using defaults"
     DB_NAME="trading_db"

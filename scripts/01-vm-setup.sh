@@ -41,9 +41,13 @@ info() {
     log "${BLUE}INFO: $1${NC}"
 }
 
+# Get script directory and repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Load environment variables if .env exists
-if [ -f ".env" ]; then
-    source .env
+if [ -f "$REPO_ROOT/.env" ]; then
+    source "$REPO_ROOT/.env"
     info "Loaded environment variables from .env file"
 else
     warning ".env file not found, using default values"

@@ -41,9 +41,13 @@ info() {
     log "${BLUE}INFO: $1${NC}"
 }
 
+# Get script directory and repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Load environment variables
-if [ -f ".env" ]; then
-    source .env
+if [ -f "$REPO_ROOT/.env" ]; then
+    source "$REPO_ROOT/.env"
     info "Loaded environment variables from .env file"
 else
     error ".env file not found. Please create it from .env.example"
@@ -296,9 +300,9 @@ echo "Database: $DB_NAME"
 echo ""
 
 # Load password from .env if available
-if [ -f ".env" ]; then
-    source .env
-    export PGPASSWORD="\$DB_PASSWORD"
+if [ -f "$REPO_ROOT/.env" ]; then
+    source "$REPO_ROOT/.env"
+    export PGPASSWORD="$DB_PASSWORD"
 fi
 
 # Connect using docker exec
