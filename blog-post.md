@@ -323,12 +323,13 @@ docker exec timescaledb psql -U postgres -d "$DB_NAME" -c "
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 "
 ```
 
 This ensures:
 - **Proper startup verification** before proceeding
-- **Essential extensions** are installed
+- **Essential extensions** are installed including `pg_stat_statements` for performance monitoring
 - **Database is fully functional** before completion
 
 ### Test Hypertable Creation
@@ -617,9 +618,14 @@ checkpoint_timeout = 5min
 max_wal_size = 1GB
 checkpoint_completion_target = 0.7
 
+# PostgreSQL 13+ compatibility (use wal_keep_size instead of wal_keep_segments)
+wal_keep_size = 1GB             # Keep WAL files for replication
+
 # TimescaleDB specific
 shared_preload_libraries = 'timescaledb'
 ```
+
+> **⚠️ Important**: When using PostgreSQL 17+, ensure you use modern parameter names. Some deprecated parameters like `wal_keep_segments` have been replaced with `wal_keep_size`.
 
 ### TimescaleDB Specific Settings
 
@@ -808,6 +814,31 @@ sudo chown -R 999:999 /mnt/timescaledb-data/postgresql
 netstat -tlnp | grep 5432
 ```
 
+**Configuration Errors:**
+```bash
+# PostgreSQL 17 compatibility issues:
+# ERROR: unrecognized configuration parameter "wal_keep_segments"
+# FIX: Use wal_keep_size instead (PostgreSQL 13+)
+# wal_keep_size = 1GB  # instead of wal_keep_segments = 64
+
+# ERROR: unrecognized configuration parameter "include_dir" 
+# FIX: Remove include_dir from docker command, use include in postgresql.conf
+# include '/path/to/timescaledb.conf'  # inside postgresql.conf
+
+# Check configuration syntax
+docker exec timescaledb postgres --check -c config_file=/etc/postgresql/postgresql.conf
+```
+
+**Extension Issues:**
+```bash
+# ERROR: pg_stat_statements queries fail
+# FIX: Enable the extension first
+docker exec timescaledb psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+
+# Verify extensions are loaded
+docker exec timescaledb psql -U postgres -c "SELECT * FROM pg_extension;"
+```
+
 **Connection Refused:**
 ```bash
 # Verify firewall rules
@@ -825,7 +856,8 @@ docker exec timescaledb pg_isready -U postgres
 # Check memory usage
 docker stats timescaledb
 
-# Monitor query performance
+# Monitor query performance (ensure pg_stat_statements is enabled first)
+docker exec timescaledb psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
 docker exec timescaledb psql -U postgres -c "SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;"
 
 # Check I/O wait
@@ -1129,7 +1161,51 @@ async function insertMetrics() {
 }
 ```
 
-## 🎉 Conclusion
+## � Lessons Learned from Real-World Implementation
+
+During the development and testing of this setup, several important compatibility and configuration issues were discovered that are worth highlighting:
+
+### PostgreSQL Version Compatibility
+
+**Issue**: When using PostgreSQL 17+ with configuration examples from older versions, deprecated parameters can cause startup failures.
+
+**Examples**:
+- `wal_keep_segments` → `wal_keep_size` (changed in PostgreSQL 13)
+- `include_dir` parameter doesn't exist in PostgreSQL
+
+**Solution**: Always check PostgreSQL documentation for your specific version and update configuration parameters accordingly.
+
+### Extension Dependencies
+
+**Issue**: Performance monitoring queries that rely on `pg_stat_statements` will fail silently if the extension isn't explicitly enabled.
+
+**Solution**: Always enable required extensions during database initialization:
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+```
+
+### Configuration File Inclusion
+
+**Issue**: Docker Compose command-line parameter `include_dir` doesn't exist in PostgreSQL.
+
+**Solution**: Use the `include` directive within `postgresql.conf` instead:
+```ini
+# Inside postgresql.conf
+include '/path/to/timescaledb.conf'
+```
+
+### Testing is Essential
+
+These issues highlight why **testing your configuration** is crucial:
+
+1. **Always test container startup** after configuration changes
+2. **Verify extensions are loaded** before running monitoring scripts  
+3. **Check PostgreSQL logs** for configuration errors
+4. **Test all monitoring and backup scripts** in your actual environment
+
+> **💡 Pro Tip**: Use `--dry-run` flags in your scripts to preview changes before applying them, and always check container logs when troubleshooting startup issues.
+
+## �🎉 Conclusion
 
 Setting up a production-ready TimescaleDB server involves many moving pieces, but with the right approach and tools, it becomes manageable and reliable. This guide provides you with:
 
