@@ -911,15 +911,179 @@ VACUUM ANALYZE;
 
 ### Security Hardening
 
-**1. Network Security:**
+**🛡️ Enterprise-Grade VM Security**
+
+Beyond database security, your VM needs comprehensive protection. Our security hardening script implements multiple layers of defense:
+
+```bash
+# Download and run the security hardening script
+./scripts/harden-vm.sh
+```
+
+**1. Firewall Configuration (UFW):**
+```bash
+# UFW provides powerful firewall management
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Allow essential services
+sudo ufw allow 22/tcp comment 'SSH'
+sudo ufw allow 5432/tcp comment 'PostgreSQL/TimescaleDB'
+sudo ufw allow from 172.16.0.0/12 comment 'Docker networks'
+
+# Enable firewall
+sudo ufw --force enable
+```
+
+**2. Intrusion Prevention (fail2ban):**
+```bash
+# fail2ban configuration for SSH protection
+cat > /etc/fail2ban/jail.local << 'EOF'
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 3
+
+[sshd]
+enabled = true
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+EOF
+
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+```
+
+**3. SSH Hardening:**
+```bash
+# Create secure SSH configuration
+cat > /etc/ssh/sshd_config.d/99-hardening.conf << 'EOF'
+# Security hardening
+PermitRootLogin no
+PasswordAuthentication yes
+MaxAuthTries 3
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# Modern secure ciphers
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group16-sha512
+EOF
+
+sudo systemctl restart ssh
+```
+
+**4. System Kernel Hardening:**
+```bash
+# Network security parameters
+cat > /etc/sysctl.d/99-security.conf << 'EOF'
+# Network security
+net.ipv4.ip_forward = 0
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.log_martians = 1
+
+# Memory protection
+kernel.dmesg_restrict = 1
+kernel.kptr_restrict = 2
+kernel.yama.ptrace_scope = 1
+EOF
+
+sudo sysctl -p /etc/sysctl.d/99-security.conf
+```
+
+**5. Intrusion Detection:**
+```bash
+# AIDE file integrity monitoring
+sudo apt install aide
+sudo aide --init
+sudo mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+# rkhunter rootkit detection
+sudo apt install rkhunter
+sudo rkhunter --update
+sudo rkhunter --check --sk
+
+# Automated security updates
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades
+```
+
+**6. Security Monitoring Dashboard:**
+```bash
+# Create security status script
+cat > ~/security-status.sh << 'EOF'
+#!/bin/bash
+echo "=== SECURITY STATUS DASHBOARD ==="
+echo "Firewall Status:"
+sudo ufw status numbered | head -5
+
+echo -e "\nFail2ban Status:"
+sudo fail2ban-client status
+
+echo -e "\nSSH Connections:"
+who
+
+echo -e "\nSystem Resources:"
+echo "Load: $(uptime | awk -F'load average:' '{print $2}')"
+echo "Memory: $(free -h | awk '/^Mem:/ {print $3"/"$2}')"
+echo "Disk: $(df -h / | awk 'NR==2 {print $3"/"$2" ("$5" used)"}')"
+
+echo -e "\nRecent Failed Logins:"
+grep "Failed password" /var/log/auth.log 2>/dev/null | tail -3 || echo "No recent failures"
+EOF
+
+chmod +x ~/security-status.sh
+```
+
+**7. Database Security:**
 ```bash
 # Restrict PostgreSQL access to specific IPs
-sudo ufw delete allow from 10.0.0.0/8 to any port 5432
-sudo ufw allow from 10.0.10.50/32 to any port 5432
+sudo ufw delete allow 5432/tcp
+sudo ufw allow from 10.0.10.0/24 to any port 5432
 
-# Use SSL/TLS for connections
+# SSL/TLS for database connections
 echo "ssl = on" >> /opt/timescaledb/config/postgresql.conf
+echo "ssl_cert_file = '/var/lib/postgresql/server.crt'" >> /opt/timescaledb/config/postgresql.conf
+echo "ssl_key_file = '/var/lib/postgresql/server.key'" >> /opt/timescaledb/config/postgresql.conf
+
+# Use certificate authentication for high security
+echo "hostssl all all 0.0.0.0/0 cert" >> /opt/timescaledb/config/pg_hba.conf
+
+# Connection limits
+echo "ALTER USER app_user CONNECTION LIMIT 10;" | docker exec -i timescaledb psql -U postgres
 ```
+
+**Security Verification:**
+```bash
+# Run security assessment
+./scripts/security-assessment.sh
+
+# Check real-time security status
+~/security-status.sh
+
+# Verify firewall rules
+sudo ufw status numbered
+
+# Check fail2ban protection
+sudo fail2ban-client status sshd
+```
+
+**🔒 Security Features Implemented:**
+- ✅ UFW firewall with strict incoming rules
+- ✅ fail2ban SSH brute-force protection  
+- ✅ SSH hardening with modern cryptography
+- ✅ System kernel security parameters
+- ✅ File integrity monitoring (AIDE)
+- ✅ Rootkit detection (rkhunter)
+- ✅ Automatic security updates
+- ✅ Real-time security monitoring
+- ✅ Database SSL/TLS encryption
+- ✅ Network access restrictions
 
 **2. Authentication:**
 ```bash
